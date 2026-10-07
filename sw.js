@@ -1,10 +1,10 @@
 /* Service worker do Nossa Família.
    Guarda a "casca" do app (página, ícones, manifesto) para abrir instantaneamente e funcionar
    como aplicativo instalado. Os dados vêm sempre da rede (Apps Script) — nunca do cache. */
-const VERSAO = 'nf-v1';
+const VERSAO = 'nf-v2';
 const CASCA = ['./', './index.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './maskable-192.png', './maskable-512.png',
-  './apple-touch-icon.png', './favicon-64.png'];
+  './apple-touch-icon.png', './favicon-64.png', './brasao-infografico.jpg', './brasao-infografico.webp'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSAO).then(function (c) { return c.addAll(CASCA); }).then(function () { return self.skipWaiting(); }));

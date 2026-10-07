@@ -37,6 +37,8 @@
   --gold-ink:#1A1200;
   --danger:#A63232;
   --danger-soft:#F6DEDE;
+  --ok:#2F6B3F;
+  --ok-soft:#DFEBDD;
   --c-desp:#B8862B;
   --c-dep:#1B2A6B;
   --bar-bg:#0F1C4D;
@@ -69,6 +71,8 @@
     --gold-ink:#1A1200;
     --danger:#E97070;
     --danger-soft:#3A2020;
+    --ok:#7FC48F;
+    --ok-soft:#1F3324;
     --c-desp:#E3B341;
     --c-dep:#7A90E8;
     --bar-bg:#070E28;
@@ -96,6 +100,8 @@
   --gold-ink:#1A1200;
   --danger:#E97070;
   --danger-soft:#3A2020;
+  --ok:#7FC48F;
+  --ok-soft:#1F3324;
   --c-desp:#E3B341;
   --c-dep:#7A90E8;
   --bar-bg:#070E28;
@@ -360,11 +366,21 @@ ul{list-style:none;margin:0;padding:0}
 .pt-s{display:none}
 @media (max-width:480px){
   .modos{gap:3px;overflow-x:auto;scrollbar-width:none}
-  .modo{padding:6px 5px;font-size:12.5px;gap:3px;min-width:0}
+  .modo{padding:6px 3px;font-size:12px;gap:2px;min-width:0;letter-spacing:-.01em}
   .modo .pt{font-size:9.5px}
   .pt-l{display:none}.pt-s{display:inline}
 }
 .ano,.ano > *{min-width:0}
+
+/* ---------- brasão ---------- */
+.brasao{max-width:1000px;margin:0 auto;padding:18px 16px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.brasao h1{font-family:var(--font-display);font-weight:600;font-size:clamp(22px,4vw,30px);color:var(--ink);margin:0;letter-spacing:.01em}
+.brasao .lema-b{font-family:var(--font-display);color:var(--warm);letter-spacing:.22em;text-transform:uppercase;font-size:12.5px}
+.brasao .quadro{background:#F7F1E1;border:1px solid var(--gold);outline:4px solid #F7F1E1;outline-offset:-6px;border-radius:6px;box-shadow:var(--shadow);padding:6px;max-width:760px;width:100%}
+.brasao .quadro img{display:block;width:100%;height:auto;border-radius:3px}
+.brasao .legenda{color:var(--ink-3);font-size:13px;max-width:620px;line-height:1.5}
+.brasao .acoes{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.brasao .carregando{color:var(--ink-3);font-size:13px;padding:40px 0}
 .hero .grande .n{font-size:clamp(24px,7vw,34px)}
 
 /* ---------- contas: números do mês ---------- */
@@ -475,6 +491,7 @@ table.ano-tab tfoot td:first-child{font-family:var(--font-ui)}
 .vazio-min{font-size:13px;color:var(--ink-3);padding:4px 0}
 .alerta{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r);padding:10px 12px;font-size:13.5px;background:var(--danger-soft);color:var(--danger);border:1px solid transparent}
 .alerta b{font-weight:600}
+.alerta.ok{background:var(--ok-soft);color:var(--ok)}
 
 /* ---------- agenda: eventos ---------- */
 .evt{display:grid;grid-template-columns:52px minmax(0,1fr) 28px;align-items:center;gap:10px;padding:8px 13px}
@@ -672,6 +689,7 @@ img{max-width:100%}
 </div>
 
 <section class="ano" id="view-ano" hidden></section>
+<section class="brasao" id="view-brasao" hidden></section>
 
 <div class="gate" id="gate" hidden>
   <div class="gate-box">
@@ -1431,7 +1449,7 @@ function escolherMesInicial(){
 function statusDe(c){
   if(c.status === "Pago") return "pago";
   if(c.status === "Agendado") return "agendado";
-  return (c.venc && c.venc < hojeISO()) ? "vencida" : "apagar";
+  return (c.venc && c.venc < hojeISO() && num(c.valor) > 0 && String(c.nome || "").trim()) ? "vencida" : "apagar";
 }
 
 function totaisDoMes(m){
@@ -1592,6 +1610,7 @@ function trocarAba(aba){
   if(aba === "ano") renderAno();
   if(aba === "agenda") renderAgenda();
   if(aba === "inicio") renderInicio();
+  if(aba === "brasao") renderBrasao();
   window.scrollTo(0, 0);
 }
 
@@ -1608,7 +1627,8 @@ function renderModos(){
     { id:"agenda",  rot:"Agenda",  pt: hojeN ? hojeN + " hoje" : "", pts: hojeN ? String(hojeN) : "" },
     { id:"compras", rot:"Compras", pt: pend ? String(pend) : "" },
     { id:"contas",  rot:"Contas",  pt: t.nVencidas ? t.nVencidas + " venc." : "", pts: t.nVencidas ? t.nVencidas + "!" : "" },
-    { id:"ano",     rot:"Ano",     pt:"" }
+    { id:"ano",     rot:"Ano",     pt:"" },
+    { id:"brasao",  rot:"Brasão",  pt:"" }
   ];
   nav.innerHTML = "";
   abas.forEach(function(a){
@@ -1627,6 +1647,7 @@ function renderModos(){
   $("#view-compras").hidden = S.aba !== "compras";
   $("#view-contas").hidden  = S.aba !== "contas";
   $("#view-ano").hidden     = S.aba !== "ano";
+  $("#view-brasao").hidden  = S.aba !== "brasao";
   $("#tabs").hidden  = S.aba !== "compras";
   $("#meses").hidden = S.aba !== "contas";
 }
@@ -2952,6 +2973,33 @@ function saudacao(){
   return s + (S.eu ? ", " + S.eu.split(" ")[0] : "");
 }
 
+/* ============================================================
+   RENDER — Brasão da família (infográfico)
+   ============================================================ */
+const BRASAO_INFO_URL = "https://danieltopnutri.github.io/nossa-familia/brasao-infografico";
+function renderBrasao(){
+  const raiz = $("#view-brasao");
+  if(!raiz || raiz.dataset.pronto) return;
+  raiz.dataset.pronto = "1";
+  raiz.innerHTML = "";
+  raiz.appendChild(el("h1", null, "Brasão da Família Gomes Gonçalves"));
+  raiz.appendChild(el("div","lema-b","Honra · União · Legado"));
+  const q = el("figure","quadro"); q.style.margin = "0";
+  const pic = document.createElement("picture");
+  const src = document.createElement("source"); src.type = "image/webp"; src.srcset = BRASAO_INFO_URL + ".webp";
+  const img = document.createElement("img");
+  img.src = BRASAO_INFO_URL + ".jpg"; img.alt = "Infográfico do brasão da família Gomes Gonçalves: leões, elmo, árvore, trigo, sol e campos, águas, e a divisa Honra, União e Legado";
+  img.loading = "lazy"; img.width = 1024; img.height = 1536;
+  pic.appendChild(src); pic.appendChild(img); q.appendChild(pic);
+  raiz.appendChild(q);
+  raiz.appendChild(el("p","legenda","Cada elemento do brasão tem um significado: os leões (força e proteção), o elmo (responsabilidade), a árvore (raízes e descendência), o trigo (trabalho e prosperidade), o sol e os campos (esperança e futuro) e as águas (continuidade). Toque na imagem para ampliar."));
+  const ac = el("div","acoes");
+  const abrir = el("a","btn btn-ghost","Abrir em tamanho real ↗"); abrir.href = BRASAO_INFO_URL + ".jpg"; abrir.target = "_blank"; abrir.rel = "noopener";
+  ac.appendChild(abrir); raiz.appendChild(ac);
+  img.addEventListener("click", function(){ window.open(BRASAO_INFO_URL + ".jpg", "_blank", "noopener"); });
+  img.style.cursor = "zoom-in";
+}
+
 function renderInicio(){
   const raiz = $("#view-inicio");
   if(!raiz) return;
@@ -2986,6 +3034,14 @@ function renderInicio(){
     const ir = el("button","mais","Ver em Contas →"); ir.type = "button"; ir.style.display = "inline"; ir.style.marginTop = "0"; ir.style.color = "inherit";
     ir.addEventListener("click", function(){ S.filtroConta = "abertas"; trocarAba("contas"); });
     t.appendChild(ir);
+    a.appendChild(t);
+    raiz.appendChild(a);
+  } else if(!S.carregando){
+    const a = el("div","alerta ok");
+    a.appendChild(el("span", null, "✅"));
+    const t = el("div");
+    t.appendChild(el("b", null, "Contas em dia"));
+    t.appendChild(document.createTextNode(" — nenhuma conta vencida em aberto."));
     a.appendChild(t);
     raiz.appendChild(a);
   }
