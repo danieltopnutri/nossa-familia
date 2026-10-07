@@ -3117,6 +3117,21 @@ function renderInicio(){
   }
   fechar(c3);
 
+  /* compras */
+  const c5 = bloco("Lista de compras", "compras", "Abrir listas →");
+  const lista = (S.listas||[]).find(function(l){ return l.id === S.ativa; });
+  const pend = (S.itens||[]).filter(function(i){ return !i.comprado; });
+  if(!lista) c5.appendChild(el("div","vazio-min","Carregando…"));
+  else if(!pend.length) c5.appendChild(el("div","vazio-min", (lista.emoji||"📝") + " " + lista.nome + " está em dia — nada pendente."));
+  else{
+    const kv = el("div","kv"); c5.appendChild(kv); kv.appendChild(el("span",null,(lista.emoji||"📝") + " " + lista.nome)); kv.appendChild(el("span","num", pend.length + (pend.length > 1 ? " itens" : " item")));
+    const ul = el("ul"); ul.style.marginTop = "4px";
+    pend.slice(0, 6).forEach(function(i){ const li = el("li","kv"); li.appendChild(el("span",null, i.nome)); li.appendChild(el("span","num", i.preco == null ? "—" : money((Number(i.preco)||0)*(Number(i.qtd)||0)))); ul.appendChild(li); });
+    if(pend.length > 6) ul.appendChild(el("li","vazio-min","+ " + (pend.length - 6) + " itens"));
+    c5.appendChild(ul);
+  }
+  fechar(c5);
+
   /* contas dos próximos dias */
   const c4 = bloco("Contas a vencer (7 dias)", "contas", "Ver contas →");
   const lim = addDias(hoje, 7);
@@ -3139,21 +3154,6 @@ function renderInicio(){
     const kv = el("div","kv"); kv.style.marginTop = "6px"; kv.appendChild(el("span",null, prox.length + (prox.length > 1 ? " contas" : " conta"))); kv.appendChild(el("span","num", money(prox.reduce(function(s,c){ return s + num(c.valor); }, 0)))); c4.appendChild(kv);
   }
   fechar(c4);
-
-  /* compras */
-  const c5 = bloco("Lista de compras", "compras", "Abrir listas →");
-  const lista = (S.listas||[]).find(function(l){ return l.id === S.ativa; });
-  const pend = (S.itens||[]).filter(function(i){ return !i.comprado; });
-  if(!lista) c5.appendChild(el("div","vazio-min","Carregando…"));
-  else if(!pend.length) c5.appendChild(el("div","vazio-min", (lista.emoji||"📝") + " " + lista.nome + " está em dia — nada pendente."));
-  else{
-    const kv = el("div","kv"); c5.appendChild(kv); kv.appendChild(el("span",null,(lista.emoji||"📝") + " " + lista.nome)); kv.appendChild(el("span","num", pend.length + (pend.length > 1 ? " itens" : " item")));
-    const ul = el("ul"); ul.style.marginTop = "4px";
-    pend.slice(0, 6).forEach(function(i){ const li = el("li","kv"); li.appendChild(el("span",null, i.nome)); li.appendChild(el("span","num", i.preco == null ? "—" : money((Number(i.preco)||0)*(Number(i.qtd)||0)))); ul.appendChild(li); });
-    if(pend.length > 6) ul.appendChild(el("li","vazio-min","+ " + (pend.length - 6) + " itens"));
-    c5.appendChild(ul);
-  }
-  fechar(c5);
 
   /* saldo do mês */
   const m = mesPorId(hoje.slice(0,7)) || mesPorId(S.mesAtivo);
